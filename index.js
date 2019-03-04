@@ -73,14 +73,24 @@ var window = {
     TKK: config.get('TKK') || '0'
 };
 
+var url = config.get('url');
+
 function updateTKK() {
     return new Promise(function (resolve, reject) {
         var now = Math.floor(Date.now() / 3600000);
 
-        if (Number(window.TKK.split('.')[0]) === now) {
+        if (url && Number(window.TKK.split('.')[0]) === now) {
             resolve();
         } else {
-            got('https://translate.google.com').then(function (res) {
+            const reqs = [
+                got('https://translate.google.com'),
+                got('https://translate.google.cn')
+            ];
+            Promise.race(reqs).then(function (res) {
+                reqs.forEach(function (res) {
+                    res.cancel();
+                });
+
                 var matches = res.body.match(/tkk:\s?'(.+?)'/i);
 
                 if (matches) {
